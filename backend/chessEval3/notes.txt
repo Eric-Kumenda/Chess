@@ -1,0 +1,205 @@
+Perfect — you're working toward a **sequence-to-move classification model** that:
+
+> 🧠 **Given a sequence of previous moves + the player to move, predicts the best next move that leads to a win (white or black).**
+
+You're using:
+
+* **TensorFlow + CNNs** (Convolutional Neural Networks)
+* Input: Move history + who's to play
+* Output: Best move to play next that **increases win chance**
+
+---
+
+## ✅ What You're Building
+
+This is essentially a **supervised classification problem**:
+
+### 🔁 Input:
+
+* Sequence of previous moves (e.g., last 5–10 moves)
+* Side to move (binary: 1 = white, 0 = black)
+
+### 🎯 Output:
+
+* Best next move (as a classification label from move vocabulary)
+
+---
+
+## ✅ Key Components
+
+### 1. **Inputs**
+
+You’ll use:
+
+| Feature       | Type        | Notes                        |
+| ------------- | ----------- | ---------------------------- |
+| Move sequence | Sequence    | Tokenized + padded/truncated |
+| Turn to move  | Binary flag | 0 for black, 1 for white     |
+
+---
+
+### 2. **Output (Target)**
+
+* The move that was played **and** led to a win
+* Only include samples from games **that were won** by the player making the move
+
+---
+
+## ✅ Data Preprocessing Pipeline
+
+### 📦 1. Filter Dataset for Winning Moves
+
+```python
+import pandas as pd
+
+df = pd.read_csv("your_file.csv")
+df = df.dropna(subset=["moves", "winner"])
+
+# Tokenize moves
+df['move_list'] = df['moves'].apply(lambda x: x.strip().split())
+
+# Keep only rows where player made move and eventually won
+def generate_training_rows(row):
+    moves = row['move_list']
+    winner = row['winner']
+    training_rows = []
+
+    # Determine who played each move
+    for i in range(4, len(moves) - 1):  # minimum 4 previous moves
+        side = 'white' if i % 2 == 0 else 'black'
+        if side == winner:
+            history = moves[i-4:i]  # last 4 moves before current
+            next_move = moves[i]
+            player_turn = 1 if side == 'white' else 0
+            training_rows.append((history, player_turn, next_move))
+    return training_rows
+
+# Flatten the dataset into (X, y)
+training_data = []
+for _, row in df.iterrows():
+    training_data.extend(generate_training_rows(row))
+
+# Create dataframe
+processed_df = pd.DataFrame(training_data, columns=["history", "turn", "target_move"])
+```
+
+---
+
+### 🧠 2. Tokenize Moves (Input and Output)
+
+```python
+from collections import Counter
+
+# Build move vocabulary
+all_moves = [move for row in processed_df['history'] for move in row] + processed_df['target_move'].tolist()
+vocab = sorted(set(all_moves))
+move_to_idx = {move: i for i, move in enumerate(vocab)}
+idx_to_move = {i: move for move, i in move_to_idx.items()}
+vocab_size = len(vocab)
+
+# Encode
+processed_df['history_idx'] = processed_df['history'].apply(lambda seq: [move_to_idx[m] for m in seq])
+processed_df['target_idx'] = processed_df['target_move'].apply(lambda m: move_to_idx[m])
+```
+
+---
+
+### 🧱 3. Pad Sequences
+
+```python
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+
+X_seq = pad_sequences(processed_df['history_idx'], maxlen=4, padding='pre')
+X_turn = processed_df['turn'].values
+y = processed_df['target_idx'].values
+```
+
+---
+
+### 🧪 4. Final Input Structure
+
+You can combine the move history + turn to move into a single input tensor or use two inputs.
+
+For CNN input:
+
+```python
+import numpy as np
+
+# Reshape for CNN (samples, time_steps, features)
+X_seq = np.expand_dims(X_seq, -1)  # shape: (samples, 4, 1)
+
+# Optionally concatenate turn as an additional "channel"
+X_combined = np.concatenate([X_seq, np.expand_dims(X_turn, axis=-1).reshape(-1, 1, 1)], axis=1)
+```
+
+---
+
+## ✅ CNN Model in TensorFlow/Keras
+
+```python
+import tensorflow as tf
+from tensorflow.keras import layers, models
+
+model = models.Sequential([
+    layers.Input(shape=(5, 1)),  # 4 moves + 1 turn
+    layers.Conv1D(64, kernel_size=2, activation='relu'),
+    layers.Conv1D(64, kernel_size=2, activation='relu'),
+    layers.Flatten(),
+    layers.Dense(128, activation='relu'),
+    layers.Dropout(0.3),
+    layers.Dense(vocab_size, activation='softmax')  # predict next move
+])
+
+model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+model.summary()
+```
+
+---
+
+## 🔁 Train the Model
+
+```python
+model.fit(X_combined, y, epochs=10, batch_size=64, validation_split=0.1)
+```
+
+---
+
+## 🔮 Predicting Best Move
+
+```python
+def predict_next_move(model, move_history, turn):
+    # Tokenize and pad
+    move_indices = [move_to_idx[m] for m in move_history]
+    padded = pad_sequences([move_indices], maxlen=4)
+    padded = np.expand_dims(padded, -1)
+    turn_tensor = np.array([[turn]])
+    input_combined = np.concatenate([padded, np.expand_dims(turn_tensor, axis=-1)], axis=1)
+
+    pred_probs = model.predict(input_combined)
+    pred_idx = np.argmax(pred_probs)
+    return idx_to_move[pred_idx]
+```
+
+---
+
+## 🔁 Summary
+
+### What you have:
+
+* CNN model that predicts best next move
+* Input: last 4 moves + side to move
+* Output: next move (from a learned vocabulary)
+* Data filtered to include only **winning-side moves**
+
+---
+
+## 🚀 Next Steps
+
+* Add **embedding layer** instead of raw integer inputs
+* Increase `sequence_length` for more context
+* Try **LSTM** or **Transformer** for sequence modeling (CNN may be limited)
+* Add **game metadata** (e.g. opening\_eco, ratings)
+
+---
+
+Would you like a full runnable script or help switching to LSTM/Transformer for even better performance?

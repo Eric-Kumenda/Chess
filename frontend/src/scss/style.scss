@@ -1,0 +1,116 @@
+@use "@coreui/coreui/scss/coreui" as * with (
+  $enable-deprecation-messages: false,
+  $dark: #0d0c0c,
+  $body-bg: #fefefe,
+  $body-bg-dark: #0d0c0c,
+  $primary: #480489,
+  $secondary-dark: #292d2d,
+  $info: #1cced8,
+  $danger: #ff365e,
+  $border-color-dark: rgb(25, 24, 25),
+  $body-tertiary-bg-dark: #1f1e1e,
+  //#242323,
+  $body-tertiary-bg: #e0e0e0,
+  $body-secondary-bg: #f1f1f0,
+  $body-secondary-bg-dark: #141515,
+  $font-family-sans-serif: "Nunito",
+  $font-size-base: 0.95rem,
+  $h5-font-size: 0.85rem,
+  $h6-font-size: 0.8rem,
+  // $btn-secondary-bg: #0d0c0c,
+  // $btn-secondary-border: #141515,
+  // $btn-secondary-color: #fff,
+  // $sidebar-nav-link-active-bg: #1f1e1e,
+  // $sidebar-nav-link-hover-bg: #242323,
+  //$dark-bg-subtle: #1f1e1e,
+  //$body-tertiary-bg: #1f1e1e
+);
+//@use "@coreui/chartjs/scss/coreui-chartjs";
+@use "vendors/simplebar";
+// @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap");
+
+@font-face {
+  font-family: "Nunito";
+  src: url("../assets/fonts/Nunito/Nunito-VariableFont_wght.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+}
+body {
+  // background-color: var(--cui-tertiary-bg);
+  //font-family: 'Nunito', sans-serif;
+}
+
+.btn-secondary {
+  --cui-btn-bg: var(--cui-body-bg-dark);
+  --cui-btn-color: var(--cui-body-color-dark);
+  --cui-btn-border-color: var(--cui-body-bg-dark);
+}
+.wrapper {
+  width: 100%;
+  padding-inline: var(--cui-sidebar-occupy-start, 0)
+    var(--cui-sidebar-occupy-end, 0);
+  will-change: auto;
+  @include transition(padding 0.15s);
+}
+
+.header > .container-fluid,
+.sidebar-header {
+  min-height: calc(
+    4rem + 1px
+  ); // stylelint-disable-line function-disallowed-list
+}
+
+.sidebar-brand-full {
+  margin-left: 3px;
+}
+
+.sidebar-header {
+  .nav-underline-border {
+    --cui-nav-underline-border-link-padding-x: 1rem;
+    --cui-nav-underline-border-gap: 0;
+  }
+
+  .nav-link {
+    display: flex;
+    align-items: center;
+    min-height: calc(
+      4rem + 1px
+    ); // stylelint-disable-line function-disallowed-list
+  }
+}
+
+.sidebar-toggler {
+  margin-inline-start: auto;
+}
+
+.sidebar-narrow,
+.sidebar-narrow-unfoldable:not(:hover) {
+  .sidebar-toggler {
+    margin-inline-end: auto;
+  }
+}
+
+.header > .container-fluid + .container-fluid {
+  min-height: 3rem;
+}
+
+.footer {
+  min-height: calc(
+    3rem + 1px
+  ); // stylelint-disable-line function-disallowed-list
+}
+
+@include color-mode(dark) {
+  body {
+    background-color: #0d0c0c; //var(--cui-dark-bg-subtle);
+  }
+
+  .btn-secondary {
+    --cui-btn-bg: var(--cui-body-color);
+    --cui-btn-color: var(--cui-body-bg);
+    --cui-btn-border-color: var(--cui-body-color);
+  }
+  .footer {
+    --cui-footer-bg: var(--cui-body-bg);
+  }
+}
